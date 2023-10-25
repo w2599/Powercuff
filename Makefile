@@ -1,17 +1,24 @@
-TWEAK_NAME = Powercuff
-Powercuff_FILES = Powercuff.x
-Powercuff_FRAMEWORKS = Foundation
-Powercuff_USE_MODULES = false
+PACKAGE_VERSION = 1.0
+THEOS_DEVICE_IP = 192.168.31.158
+ARCHS = arm64e
 
-IPHONE_ARCHS = arm64 arm64e
-
-TARGET_IPHONEOS_DEPLOYMENT_VERSION = 7.0
-TARGET_IPHONEOS_DEPLOYMENT_VERSION_arm64 = 7.0
-TARGET_IPHONEOS_DEPLOYMENT_VERSION_arm64e = 8.4
-
-ADDITIONAL_CFLAGS = -std=c99
+TARGET := iphone:clang:latest
 
 INSTALL_TARGET_PROCESSES = thermalmonitord SpringBoard
 
-include framework/makefiles/common.mk
-include framework/makefiles/tweak.mk
+include $(THEOS)/makefiles/common.mk
+
+TWEAK_NAME = 0Powercuff
+$(TWEAK_NAME)_FILES = Powercuff.x
+$(TWEAK_NAME)_FRAMEWORKS = Foundation
+$(TWEAK_NAME)_CFLAGS = -std=c99
+$(TWEAK_NAME)_USE_MODULES = false
+
+
+
+include $(THEOS_MAKE_PATH)/tweak.mk
+
+
+clean::
+	rm -rf .theos/obj
+	rm -rf packages
