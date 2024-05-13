@@ -1,4 +1,5 @@
-#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#import <libroot.h>
 #import <notify.h>
 
 extern char ***_NSGetArgv(void);
@@ -53,7 +54,6 @@ static void ApplyThermals(void)
 %group thermalmonitord
 
 %hook CommonProduct
-
 - (id)initProduct:(id)data
 {
 	if ((self = %orig())) {
@@ -72,7 +72,6 @@ static void ApplyThermals(void)
 	}
 	%orig();
 }
-
 %end
 
 %end
@@ -87,31 +86,34 @@ static void LoadSettings(void)
 	CFPropertyListRef powerMode = CFPreferencesCopyValue(CFSTR("PowerMode"), CFSTR("com.rpetrich.powercuff"), kCFPreferencesCurrentUser, kCFPreferencesCurrentHost);
 	uint64_t thermalMode = 0;
 	if (powerMode) {
-		if ([(id)powerMode isKindOfClass:[NSNumber class]]) {
-			thermalMode = (uint64_t)[(NSNumber *)powerMode unsignedLongLongValue];
+		if ([(__bridge id)powerMode isKindOfClass:[NSNumber class]]) {
+			thermalMode = (uint64_t)[(__bridge NSNumber *)powerMode unsignedLongLongValue];
 		}
 		CFRelease(powerMode);
 	}
 	CFPropertyListRef requireLowPowerMode = CFPreferencesCopyValue(CFSTR("RequireLowPowerMode"), CFSTR("com.rpetrich.powercuff"), kCFPreferencesCurrentUser, kCFPreferencesCurrentHost);
-	if (requireLowPowerMode && [(id)requireLowPowerMode isKindOfClass:[NSNumber class]] && [(id)requireLowPowerMode boolValue]) {
+	if (requireLowPowerMode && [(__bridge id)requireLowPowerMode isKindOfClass:[NSNumber class]] && [(__bridge id)requireLowPowerMode boolValue]) {
 		if ([[%c(_CDBatterySaver) batterySaver] getPowerMode] == 0) {
 			thermalMode = 0;
 		}
 	}
+	NSLog(@"[----]thermalMode = %llu",thermalMode);
 	notify_set_state(token, thermalMode);
 	notify_post("com.rpetrich.powercuff.thermals");
+}
+
+void batteryLevelDidChange() {
+	LoadSettings();
 }
 
 %group SpringBoard
 
 %hook SpringBoard
-
-- (void)_batterySaverModeChanged:(NSInteger)token
+- (void)_batterySaverModeChanged:(NSInteger)arg1
 {
 	%orig();
 	LoadSettings();
 }
-
 %end
 
 %end
@@ -124,6 +126,14 @@ static void LoadSettings(void)
     path = path == NULL ? argv0 : path + 1;
     if (strcmp(path, "thermalmonitord") == 0) {
 		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (void *)ApplyThermals, CFSTR("com.rpetrich.powercuff.thermals"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+		[[NSNotificationCenter defaultCenter]
+			addObserverForName:UIDeviceBatteryLevelDidChangeNotification
+			object:nil
+			queue:[NSOperationQueue mainQueue]
+			usingBlock:^(NSNotification * _Nonnull note) {
+				batteryLevelDidChange();
+			}
+		];
 		%init(thermalmonitord);
     } else {
 	    CFNotificationCenterRef center = CFNotificationCenterGetDarwinNotifyCenter();

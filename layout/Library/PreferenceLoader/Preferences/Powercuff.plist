@@ -9,7 +9,7 @@
 		<key>cell</key>
 		<string>PSLinkCell</string>
 		<key>icon</key>
-		<string>/var/jb/Library/PreferenceLoader/Preferences/Powercuff/Powercuff.png</string>
+		<string>Powercuff.png</string>
 		<key>label</key>
 		<string>Powercuff</string>
 	</dict>
